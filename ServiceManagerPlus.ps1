@@ -1,14 +1,21 @@
+if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]'Administrator')) {
+    Start-Process PowerShell.exe -ArgumentList ("-NoProfile -ExecutionPolicy Bypass -File `"{0}`"" -f $PSCommandPath) -Verb RunAs
+    Exit	
+}
+
 function Get-ServicePlus {
+    #Get all Services
     $services = Get-Service -Name * -ErrorAction SilentlyContinue
     $svcWMI = Get-WmiObject -Class Win32_Service
     $servicesPlus = @()
 
     foreach ($service in $services) {
+        #Get the Binary Path
         $query = sc.exe qc $service.ServiceName | Select-String 'BINARY_PATH_NAME'
         $binPath = if ($query) { ($query -split ':', 2)[1].Trim() } else { '' }
-
+        #Get the Service Description
         $svcDesc = $svcWMI | Where-Object { $_.Name -eq $service.ServiceName }
-
+        #Custom Object to fill Data Grid Table
         $servicePlus = [PSCustomObject]@{
             DisplayName           = $service.DisplayName
             Name                  = $service.ServiceName
@@ -37,7 +44,6 @@ Add-Type -AssemblyName System.Drawing
 # Create the form
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Service Manager Plus'
-#$form.Size = New-Object System.Drawing.Size(2000, 1000)
 $form.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
 $form.WindowState = 'Maximized'
 
@@ -55,23 +61,17 @@ $searchBox.add_TextChanged({
 
 # Create the PictureBox
 $pictureBox = New-Object System.Windows.Forms.PictureBox
-$pictureBox.Location = New-Object System.Drawing.Point(215, 5) # Adjust the location as needed
-$pictureBox.Size = New-Object System.Drawing.Size(30, 20) # Adjust the size as needed
+$pictureBox.Location = New-Object System.Drawing.Point(215, 5) 
+$pictureBox.Size = New-Object System.Drawing.Size(30, 20) 
 $pictureBox.SizeMode = [System.Windows.Forms.PictureBoxSizeMode]::Zoom
-
-# Load the image
-$imagePath = 'Assets\Search.png' # Replace with the path to your image
+$imagePath = 'Assets\Search.png' 
 $image = [System.Drawing.Image]::FromFile($imagePath)
 $pictureBox.Image = $image
-
-# Add the PictureBox to the form
 $form.Controls.Add($pictureBox)
 
 
 # Create the DataGridView
 $dataGridView = New-Object System.Windows.Forms.DataGridView
-#$dataGridView.Size = New-Object System.Drawing.Size(1310, 690)
-#$dataGridView.Dock = 'Fill'
 $dataGridView.Location = New-Object System.Drawing.Point(-40, 30)
 $dataGridView.ReadOnly = $true
 $dataGridView.BackgroundColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
@@ -93,7 +93,6 @@ $form.add_Resize({
         $dataGridView.Size = New-Object System.Drawing.Size(($form.Width + 25), ($form.Height - 70))
     })
 
-# Add the DataGridView to the form
 $form.Controls.Add($dataGridView)
 
 # Retrieve the service data
@@ -117,8 +116,6 @@ foreach ($service in $servicesPlus) {
 # Bind the DataTable to the DataGridView
 $dataGridView.DataSource = $dataTable
 
-# Set a specific size for each column
-
 #set autosize mode for each column
 $dataGridView.Columns['DisplayName'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
 $dataGridView.Columns['Name'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
@@ -127,7 +124,6 @@ $dataGridView.Columns['StartType'].AutoSizeMode = [System.Windows.Forms.DataGrid
 $dataGridView.Columns['DependentService(s)'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
 $dataGridView.Columns['BinaryPath'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
 $dataGridView.Columns['Description'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
-#$dataGridView.Columns['Description'].DefaultCellStyle.WrapMode = [System.Windows.Forms.DataGridViewTriState]::True
 
 #set custom width
 $dataGridView.Columns['DisplayName'].Width = 230
@@ -136,8 +132,6 @@ $dataGridView.Columns['Status'].Width = 80
 $dataGridView.Columns['StartType'].Width = 80
 $dataGridView.Columns['DependentService(s)'].Width = 200
 $dataGridView.Columns['BinaryPath'].Width = 200
-
-
 
 # Show the form
 [void]$form.ShowDialog()
