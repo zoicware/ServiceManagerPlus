@@ -64,8 +64,13 @@ $pictureBox = New-Object System.Windows.Forms.PictureBox
 $pictureBox.Location = New-Object System.Drawing.Point(215, 5) 
 $pictureBox.Size = New-Object System.Drawing.Size(30, 20) 
 $pictureBox.SizeMode = [System.Windows.Forms.PictureBoxSizeMode]::Zoom
-$imagePath = 'Assets\Search.png' 
-$image = [System.Drawing.Image]::FromFile($imagePath)
+$imagePath = 'Assets\Search.png'
+try {
+    $image = [System.Drawing.Image]::FromFile($imagePath)
+}
+catch {
+    Write-Host 'Missing Asset (Search Icon)' -ForegroundColor Red
+}
 $pictureBox.Image = $image
 $form.Controls.Add($pictureBox)
 
@@ -79,14 +84,17 @@ $dataGridView.ForeColor = 'White'
 $dataGridView.GridColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
 $dataGridView.DefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
 $dataGridView.DefaultCellStyle.ForeColor = 'White'
-$dataGridView.DefaultCellStyle.SelectionBackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
-$dataGridView.DefaultCellStyle.SelectionForeColor = 'White'
+$dataGridView.DefaultCellStyle.SelectionBackColor = [System.Drawing.Color]::FromArgb(176, 176, 176) 
+$dataGridView.DefaultCellStyle.SelectionForeColor = 'Black'
 $dataGridView.ColumnHeadersDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
 $dataGridView.ColumnHeadersDefaultCellStyle.ForeColor = 'White'
 $dataGridView.RowHeadersDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
 $dataGridView.RowHeadersDefaultCellStyle.ForeColor = 'White'
+$dataGridView.AlternatingRowsDefaultCellStyle.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+$dataGridView.AlternatingRowsDefaultCellStyle.ForeColor = 'White'
 $dataGridView.ScrollBars = [System.Windows.Forms.ScrollBars]::Both
 $dataGridView.AllowUserToResizeColumns = $true
+$dataGridView.SelectionMode = [System.Windows.Forms.DataGridViewSelectionMode]::FullRowSelect
 
 $form.add_Resize({
         # Adjust the DataGridView's size when the form is resized
@@ -132,6 +140,11 @@ $dataGridView.Columns['Status'].Width = 80
 $dataGridView.Columns['StartType'].Width = 80
 $dataGridView.Columns['DependentService(s)'].Width = 200
 $dataGridView.Columns['BinaryPath'].Width = 200
+
+#remove first row selection
+$form.Add_Shown({
+        $dataGridView.ClearSelection()
+    })
 
 # Show the form
 [void]$form.ShowDialog()
