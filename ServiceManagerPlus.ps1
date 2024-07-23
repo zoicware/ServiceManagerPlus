@@ -32,6 +32,17 @@ function Get-ServicePlus {
     return $servicesPlus
 }
 
+#returns string array
+function Get-SelectedService {
+    $selectedRows = $dataGridView.SelectedRows
+    $serviceNames = @()
+    foreach ($row in $selectedRows) {
+        $cells = $row.Cells
+        $serviceNames += $cells[1].Value
+    }
+    return $serviceNames
+}
+
 
 
 Write-Host 'Getting Services Please Wait...'
@@ -47,6 +58,53 @@ $form.Text = 'Service Manager Plus'
 $form.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
 $form.WindowState = 'Maximized'
 
+$openReg = New-Object System.Windows.Forms.Button
+$openReg.Text = 'Open in Registry'
+$openReg.Size = New-Object System.Drawing.Size(150, 28)
+try {
+    $image = [System.Drawing.Image]::FromFile('Assets\Registry.png')
+    #width,height
+    $resizedImage = New-Object System.Drawing.Bitmap $image, 25, 19
+
+    # Set the button image
+    $openReg.Image = $resizedImage
+    $openReg.ImageAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+    $openReg.TextImageRelation = [System.Windows.Forms.TextImageRelation]::ImageBeforeText
+}
+catch {
+    Write-Host 'Missing Asset (Registry Icon)' -ForegroundColor Red
+}
+$openReg.ForeColor = 'White'
+$openReg.Location = New-Object System.Drawing.Point(280, 2)
+#add mouse over effect without using flat style
+$openReg.Add_MouseEnter({
+        $openReg.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$openReg.Add_MouseLeave({
+        $openReg.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$openReg.Add_Click({
+        $selected = Get-SelectedService
+        if (!($selected)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            #close regedit if its open
+            Stop-Process -Name regedit -Force -ErrorAction SilentlyContinue
+            #open registry to first row selected
+            #if array only has 1 item just use $selected
+            if ($selected.Count -eq 1) {
+                $Path = "HKLM\SYSTEM\ControlSet001\Services\$($selected)"
+            }
+            else {
+                $Path = "HKLM\SYSTEM\ControlSet001\Services\$($selected[0])"
+            }
+            Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit' -Name Lastkey -Value $Path -Type String -Force
+            Start-Process 'regedit.exe'
+        }
+    })
+$form.Controls.Add($openReg)
 
 # Create the TextBox for search
 $searchBox = New-Object System.Windows.Forms.TextBox
@@ -76,7 +134,7 @@ $form.Controls.Add($pictureBox)
 
 
 # Create the DataGridView
-$dataGridView = New-Object System.Windows.Forms.DataGridView
+$Global:dataGridView = New-Object System.Windows.Forms.DataGridView
 $dataGridView.Location = New-Object System.Drawing.Point(-40, 30)
 $dataGridView.ReadOnly = $true
 $dataGridView.BackgroundColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
