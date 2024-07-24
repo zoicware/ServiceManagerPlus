@@ -43,7 +43,25 @@ function Get-SelectedService {
     return $serviceNames
 }
 
+function Run-Trusted([String]$command) {
 
+    Stop-Service -Name TrustedInstaller -Force -ErrorAction SilentlyContinue
+    #get bin path to revert later
+    $query = sc.exe qc TrustedInstaller | Select-String 'BINARY_PATH_NAME'
+    #limit split to only 2 parts
+    $binPath = $query -split ':', 2
+    #convert command to base64 to avoid errors with spaces
+    $bytes = [System.Text.Encoding]::Unicode.GetBytes($command)
+    $base64Command = [Convert]::ToBase64String($bytes)
+    #change bin to command
+    sc.exe config TrustedInstaller binPath= "cmd.exe /c powershell.exe -encodedcommand $base64Command" | Out-Null
+    #run the command
+    sc.exe start TrustedInstaller | Out-Null
+    #set bin back to default
+    sc.exe config TrustedInstaller binPath= "$($binPath[1].Trim())" | Out-Null
+    Stop-Service -Name TrustedInstaller -Force -ErrorAction SilentlyContinue
+
+}
 
 Write-Host 'Getting Services Please Wait...'
 
@@ -181,6 +199,115 @@ foreach ($service in $servicesPlus) {
 
 # Bind the DataTable to the DataGridView
 $dataGridView.DataSource = $dataTable
+
+# Create the label
+$label = New-Object System.Windows.Forms.Label
+$label.Text = 'Set Service:'
+$label.ForeColor = 'White'
+$label.Location = New-Object System.Drawing.Point(440, 5)
+$label.AutoSize = $true
+$label.Font = New-Object System.Drawing.Font('Segoe UI', 10)
+$form.Controls.Add($label)
+
+# Create the buttons
+$manualButton = New-Object System.Windows.Forms.Button
+$manualButton.Text = 'Manual'
+$manualButton.Size = New-Object System.Drawing.Size(90, 30)
+$manualButton.Location = New-Object System.Drawing.Point(520, 2)
+$manualButton.ForeColor = 'White'
+$manualButton.Add_MouseEnter({
+        $manualButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$manualButton.Add_MouseLeave({
+        $manualButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($manualButton)
+
+$automaticButton = New-Object System.Windows.Forms.Button
+$automaticButton.Text = 'Automatic'
+$automaticButton.Size = New-Object System.Drawing.Size(90, 30)
+$automaticButton.Location = New-Object System.Drawing.Point(610, 2)
+$automaticButton.ForeColor = 'White'
+$automaticButton.Add_MouseEnter({
+        $automaticButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$automaticButton.Add_MouseLeave({
+        $automaticButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($automaticButton)
+
+$disabledButton = New-Object System.Windows.Forms.Button
+$disabledButton.Text = 'Disabled'
+$disabledButton.Size = New-Object System.Drawing.Size(90, 30)
+$disabledButton.Location = New-Object System.Drawing.Point(700, 2)
+$disabledButton.ForeColor = 'White'
+$disabledButton.Add_MouseEnter({
+        $disabledButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$disabledButton.Add_MouseLeave({
+        $disabledButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($disabledButton)
+
+$manualButton.Add_Click({
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            if ($selectedServices.Count -gt 1) {
+                foreach ($service in $selectedServices) {
+                    $command += "Set-Service -Name $service -StartupType Manual; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Manual"
+                Run-Trusted -command $command
+            }
+        }
+    })
+
+$automaticButton.Add_Click({
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            if ($selectedServices.Count -gt 1) {
+                foreach ($service in $selectedServices) {
+                    $command += "Set-Service -Name $service -StartupType Automatic; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Automatic"
+                Run-Trusted -command $command
+            }
+        }
+    })
+
+$disabledButton.Add_Click({
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            if ($selectedServices.Count -gt 1) {
+                foreach ($service in $selectedServices) {
+                    $command += "Set-Service -Name $service -StartupType Disabled; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Disabled"
+                Run-Trusted -command $command
+            }
+        }
+    })
 
 #set autosize mode for each column
 $dataGridView.Columns['DisplayName'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
