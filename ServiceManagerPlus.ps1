@@ -6,10 +6,14 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
 function Get-ServicePlus {
     #Get all Services
     $services = Get-Service -Name * -ErrorAction SilentlyContinue
+    $totalServices = $services.Count
     $svcWMI = Get-WmiObject -Class Win32_Service
     $servicesPlus = @()
-
+    $i = 0
     foreach ($service in $services) {
+        $i++
+        Write-Progress -Activity 'Getting Services' -Status "$([math]::Round(($i / $totalServices) * 100)) % Complete" -PercentComplete $(($i / $totalServices) * 100) 
+        $progressbar1.Value = $(($i / $totalServices) * 100) 
         #Get the Binary Path
         $query = sc.exe qc $service.ServiceName | Select-String 'BINARY_PATH_NAME'
         $binPath = if ($query) { ($query -split ':', 2)[1].Trim() } else { '' }
@@ -63,8 +67,6 @@ function Run-Trusted([String]$command) {
 
 }
 
-Write-Host 'Getting Services Please Wait...'
-
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -75,6 +77,22 @@ $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Service Manager Plus'
 $form.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
 $form.WindowState = 'Maximized'
+
+$Global:progressBar1 = New-Object System.Windows.Forms.ProgressBar
+$progressBar1.Location = New-Object System.Drawing.Point(500, 400)
+$progressBar1.Size = New-Object System.Drawing.Size(300, 25)
+$progressBar1.Style = 'Marquee'
+$progressBar1.Visible = $false
+$form.Controls.Add($progressBar1)
+
+$labelLoading = New-Object System.Windows.Forms.Label
+$labelLoading.Text = 'Loading'
+$labelLoading.ForeColor = 'White'
+$labelLoading.Location = New-Object System.Drawing.Point(350, 400)
+$labelLoading.AutoSize = $true
+$labelLoading.Font = New-Object System.Drawing.Font('Segoe UI', 13)
+$labelLoading.Visible = $false
+$form.Controls.Add($labelLoading)
 
 $openReg = New-Object System.Windows.Forms.Button
 $openReg.Text = 'Open in Registry'
@@ -179,26 +197,47 @@ $form.add_Resize({
 
 $form.Controls.Add($dataGridView)
 
-# Retrieve the service data
-$servicesPlus = Get-ServicePlus
+function addServicesToGrid {
+    # Retrieve the service data
+    $servicesPlus = Get-ServicePlus
 
-# Convert the data to a DataTable
-$dataTable = New-Object System.Data.DataTable
-$columnNames = $servicesPlus[0].PSObject.Properties.Name 
-foreach ($name in $columnNames) {
-    $dataTable.Columns.Add($name) | Out-Null
-}
-foreach ($service in $servicesPlus) {
-    $row = $dataTable.NewRow()
-    $rows = $service.PSObject.Properties
-    foreach ($r in $rows) {
-        $row[$r.Name] = $service.$($r.Name) 
+    # Convert the data to a DataTable
+    $Global:dataTable = New-Object System.Data.DataTable
+    $columnNames = $servicesPlus[0].PSObject.Properties.Name 
+    foreach ($name in $columnNames) {
+        $dataTable.Columns.Add($name) | Out-Null
     }
-    $dataTable.Rows.Add($row) | Out-Null
-}
+    foreach ($service in $servicesPlus) {
+        $row = $dataTable.NewRow()
+        $rows = $service.PSObject.Properties
+        foreach ($r in $rows) {
+            $row[$r.Name] = $service.$($r.Name) 
+        }
+        $dataTable.Rows.Add($row) | Out-Null
+    }
 
-# Bind the DataTable to the DataGridView
-$dataGridView.DataSource = $dataTable
+    # Bind the DataTable to the DataGridView
+    $dataGridView.DataSource = $dataTable
+
+    #set autosize mode for each column
+    $dataGridView.Columns['DisplayName'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['Name'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['Status'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['StartType'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['DependentService(s)'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['BinaryPath'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
+    $dataGridView.Columns['Description'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+
+    #set custom width
+    $dataGridView.Columns['DisplayName'].Width = 230
+    $dataGridView.Columns['Name'].Width = 170
+    $dataGridView.Columns['Status'].Width = 80
+    $dataGridView.Columns['StartType'].Width = 80
+    $dataGridView.Columns['DependentService(s)'].Width = 200
+    $dataGridView.Columns['BinaryPath'].Width = 200
+
+}
+addServicesToGrid
 
 # Create the label
 $label = New-Object System.Windows.Forms.Label
@@ -208,6 +247,33 @@ $label.Location = New-Object System.Drawing.Point(440, 5)
 $label.AutoSize = $true
 $label.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 $form.Controls.Add($label)
+
+$refreshGrid = New-Object System.Windows.Forms.Button
+$refreshGrid.Text = 'Refresh'
+$refreshGrid.Size = New-Object System.Drawing.Size(90, 30)
+$refreshGrid.Location = New-Object System.Drawing.Point(1150, 2)
+$refreshGrid.ForeColor = 'White'
+$refreshGrid.Add_Click({
+        #$dataGridView.Rows.Clear()
+        $dataGridView.Columns.Clear()
+        $dataGridView.Refresh()
+        $progressBar1.Visible = $true
+        $labelLoading.Visible = $true
+        addServicesToGrid
+        $labelLoading.Visible = $false
+        $progressBar1.Visible = $false
+        $dataGridView.Refresh()
+        $dataGridView.ClearSelection()
+        
+    })
+$refreshGrid.Add_MouseEnter({
+        $refreshGrid.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$refreshGrid.Add_MouseLeave({
+        $refreshGrid.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($refreshGrid)
 
 # Create the buttons
 $manualButton = New-Object System.Windows.Forms.Button
@@ -309,22 +375,6 @@ $disabledButton.Add_Click({
         }
     })
 
-#set autosize mode for each column
-$dataGridView.Columns['DisplayName'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['Name'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['Status'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['StartType'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['DependentService(s)'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['BinaryPath'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::None
-$dataGridView.Columns['Description'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
-
-#set custom width
-$dataGridView.Columns['DisplayName'].Width = 230
-$dataGridView.Columns['Name'].Width = 170
-$dataGridView.Columns['Status'].Width = 80
-$dataGridView.Columns['StartType'].Width = 80
-$dataGridView.Columns['DependentService(s)'].Width = 200
-$dataGridView.Columns['BinaryPath'].Width = 200
 
 #remove first row selection
 $form.Add_Shown({
