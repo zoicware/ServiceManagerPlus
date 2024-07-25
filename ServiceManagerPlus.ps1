@@ -31,7 +31,7 @@ function Get-ServicePlus {
             Description           = $svcDesc.Description
         }
 
-        $servicesPlus.Add($servicePlus) | Out-Null
+        $null = $servicesPlus.Add($servicePlus)
     }
 
     return $servicesPlus
