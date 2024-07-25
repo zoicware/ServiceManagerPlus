@@ -13,11 +13,10 @@ function Get-ServicePlus {
     $i = 0
     foreach ($service in $services) {
         $i++
-        Write-Progress -Activity 'Getting Services' -Status "$([math]::Round(($i / $totalServices) * 100)) % Complete" -PercentComplete $(($i / $totalServices) * 100) 
+        #Write-Progress -Activity 'Getting Services' -Status "$([math]::Round(($i / $totalServices) * 100)) % Complete" -PercentComplete $(($i / $totalServices) * 100) 
         $progressbar1.Value = $(($i / $totalServices) * 100) 
         #Get the Binary Path
-        $query = sc.exe qc $service.ServiceName | Select-String 'BINARY_PATH_NAME'
-        $binPath = if ($query) { ($query -split ':', 2)[1].Trim() } else { '' }
+        $binPath = $svcWMI[$service.ServiceName].PathName
         #Get the Service Description
         $svcDesc = $svcWMI[$service.ServiceName]
         #Custom Object to fill Data Grid Table
@@ -52,9 +51,8 @@ function Run-Trusted([String]$command) {
 
     Stop-Service -Name TrustedInstaller -Force -ErrorAction SilentlyContinue
     #get bin path to revert later
-    $query = sc.exe qc TrustedInstaller | Select-String 'BINARY_PATH_NAME'
-    #limit split to only 2 parts
-    $binPath = $query -split ':', 2
+    $service = Get-WmiObject -Class Win32_Service -Filter "Name='TrustedInstaller'"
+    $DefaultBinPath = $service.PathName
     #convert command to base64 to avoid errors with spaces
     $bytes = [System.Text.Encoding]::Unicode.GetBytes($command)
     $base64Command = [Convert]::ToBase64String($bytes)
@@ -63,7 +61,7 @@ function Run-Trusted([String]$command) {
     #run the command
     sc.exe start TrustedInstaller | Out-Null
     #set bin back to default
-    sc.exe config TrustedInstaller binPath= "$($binPath[1].Trim())" | Out-Null
+    sc.exe config TrustedInstaller binpath= "`"$DefaultBinPath`"" | Out-Null
     Stop-Service -Name TrustedInstaller -Force -ErrorAction SilentlyContinue
 
 }
