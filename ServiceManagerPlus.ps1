@@ -7,8 +7,9 @@ function Get-ServicePlus {
     #Get all Services
     $services = Get-Service -Name * -ErrorAction SilentlyContinue
     $totalServices = $services.Count
-    $svcWMI = Get-WmiObject -Class Win32_Service
-    $servicesPlus = @()
+    $svcWMI = Get-WmiObject -Class Win32_Service | Group-Object -Property Name -AsHashTable -AsString
+    #use .net array list since .Add method is much faster than +=
+    $servicesPlus = [System.Collections.ArrayList]::new()
     $i = 0
     foreach ($service in $services) {
         $i++
@@ -18,7 +19,7 @@ function Get-ServicePlus {
         $query = sc.exe qc $service.ServiceName | Select-String 'BINARY_PATH_NAME'
         $binPath = if ($query) { ($query -split ':', 2)[1].Trim() } else { '' }
         #Get the Service Description
-        $svcDesc = $svcWMI | Where-Object { $_.Name -eq $service.ServiceName }
+        $svcDesc = $svcWMI[$service.ServiceName]
         #Custom Object to fill Data Grid Table
         $servicePlus = [PSCustomObject]@{
             DisplayName           = $service.DisplayName
@@ -30,7 +31,7 @@ function Get-ServicePlus {
             Description           = $svcDesc.Description
         }
 
-        $servicesPlus += $servicePlus
+        $servicesPlus.Add($servicePlus) | Out-Null
     }
 
     return $servicesPlus
