@@ -274,6 +274,70 @@ $refreshGrid.Add_MouseLeave({
     })
 $form.Controls.Add($refreshGrid)
 
+$stopService = New-Object System.Windows.Forms.Button
+$stopService.Text = 'Stop Service'
+$stopService.Size = New-Object System.Drawing.Size(90, 30)
+$stopService.Location = New-Object System.Drawing.Point(850, 2)
+$stopService.ForeColor = 'White'
+$stopService.Add_Click({
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            if ($selectedServices.Count -gt 1) {
+                foreach ($service in $selectedServices) {
+                    $command += "Stop-Service -Name $service -Force; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Stop-Service -Name $selectedServices -Force"
+                Run-Trusted -command $command
+            }
+        }
+    })
+$stopService.Add_MouseEnter({
+        $stopService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$stopService.Add_MouseLeave({
+        $stopService.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($stopService)
+
+$startService = New-Object System.Windows.Forms.Button
+$startService.Text = 'Start Service'
+$startService.Size = New-Object System.Drawing.Size(90, 30)
+$startService.Location = New-Object System.Drawing.Point(940, 2)
+$startService.ForeColor = 'White'
+$startService.Add_Click({
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
+        }
+        else {
+            if ($selectedServices.Count -gt 1) {
+                foreach ($service in $selectedServices) {
+                    $command += "Start-Service -Name $service; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Start-Service -Name $selectedServices"
+                Run-Trusted -command $command
+            }
+        }
+    })
+$startService.Add_MouseEnter({
+        $startService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$startService.Add_MouseLeave({
+        $startService.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($startService)
+
 # Create the buttons
 $manualButton = New-Object System.Windows.Forms.Button
 $manualButton.Text = 'Manual'
