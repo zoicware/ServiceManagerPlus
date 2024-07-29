@@ -66,7 +66,100 @@ function Run-Trusted([String]$command) {
 
 }
 
+function Stop-SelectedService {
+    $selectedServices = Get-SelectedService
+    if (!($selectedServices)) {
+        Write-Host 'No Service Selected...'
+    }
+    else {
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                $command += "Stop-Service -Name $service -Force; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Stop-Service -Name $selectedServices -Force"
+            Run-Trusted -command $command
+        }
+    }
+}
 
+function Start-SelectedService {
+    $selectedServices = Get-SelectedService
+    if (!($selectedServices)) {
+        Write-Host 'No Service Selected...'
+    }
+    else {
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                $command += "Start-Service -Name $service; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Start-Service -Name $selectedServices"
+            Run-Trusted -command $command
+        }
+    }
+}
+
+function Set-Manual {
+    $selectedServices = Get-SelectedService
+    if (!($selectedServices)) {
+        Write-Host 'No Service Selected...'
+    }
+    else {
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                $command += "Set-Service -Name $service -StartupType Manual; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Set-Service -Name $selectedServices -StartupType Manual"
+            Run-Trusted -command $command
+        }
+    }
+}
+
+function Set-Automatic {
+    $selectedServices = Get-SelectedService
+    if (!($selectedServices)) {
+        Write-Host 'No Service Selected...'
+    }
+    else {
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                $command += "Set-Service -Name $service -StartupType Automatic; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Set-Service -Name $selectedServices -StartupType Automatic"
+            Run-Trusted -command $command
+        }
+    }
+}
+
+function Set-Disabled {
+    $selectedServices = Get-SelectedService
+    if (!($selectedServices)) {
+        Write-Host 'No Service Selected...'
+    }
+    else {
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                $command += "Set-Service -Name $service -StartupType Disabled; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Set-Service -Name $selectedServices -StartupType Disabled"
+            Run-Trusted -command $command
+        }
+    }
+}
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -196,6 +289,73 @@ $form.add_Resize({
 
 $form.Controls.Add($dataGridView)
 
+#add right click context menu
+$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+$lookUpService = New-Object System.Windows.Forms.ToolStripMenuItem
+$lookUpService.Text = 'Look Up Service'
+$stop = New-Object System.Windows.Forms.ToolStripMenuItem
+$stop.Text = 'Stop'
+$start = New-Object System.Windows.Forms.ToolStripMenuItem
+$start.Text = 'Start'
+$disable = New-Object System.Windows.Forms.ToolStripMenuItem
+$disable.Text = 'Disable'
+$manual = New-Object System.Windows.Forms.ToolStripMenuItem
+$manual.Text = 'Manual'
+$auto = New-Object System.Windows.Forms.ToolStripMenuItem
+$auto.Text = 'Automatic'
+$contextMenu.Items.Add($lookUpService) | Out-Null
+$contextMenu.Items.Add($stop) | Out-Null
+$contextMenu.Items.Add($start) | Out-Null
+$contextMenu.Items.Add($disable) | Out-Null
+$contextMenu.Items.Add($manual) | Out-Null
+$contextMenu.Items.Add($auto) | Out-Null
+$dataGridView.ContextMenuStrip = $contextMenu
+
+# Handle the MouseDown event to show the context menu only when a row is selected
+$dataGridView.add_MouseDown({
+        param($sender, $e)
+        if ($e.Button -eq [System.Windows.Forms.MouseButtons]::Right) {
+            $hitTestInfo = $dataGridView.HitTest($e.X, $e.Y)
+            if ($hitTestInfo.RowIndex -ge 0) {
+                #$dataGridView.ClearSelection()
+                $dataGridView.Rows[$hitTestInfo.RowIndex].Selected = $true
+                $contextMenu.Show($dataGridView, $e.Location)
+            }
+        }
+    })
+
+$lookUpService.Add_Click({
+        $selectedServices = Get-SelectedService
+        if ($selectedServices.Count -gt 1) {
+            foreach ($service in $selectedServices) {
+                Start-Process "https://www.google.com/search?q=$service"
+            }
+        }
+        else {
+            Start-Process "https://www.google.com/search?q=$selectedServices"
+        }
+    })
+
+$stop.Add_Click({
+        Stop-SelectedService
+    })
+
+$start.Add_Click({
+        Start-SelectedService
+    })
+
+$manual.Add_Click({
+        Set-Manual
+    })
+
+$auto.Add_Click({
+        Set-Automatic
+    })
+
+$disable.Add_Click({
+        Set-Disabled
+    })
+
 function addServicesToGrid {
     # Retrieve the service data
     $servicesPlus = Get-ServicePlus
@@ -280,22 +440,7 @@ $stopService.Size = New-Object System.Drawing.Size(90, 30)
 $stopService.Location = New-Object System.Drawing.Point(850, 2)
 $stopService.ForeColor = 'White'
 $stopService.Add_Click({
-        $selectedServices = Get-SelectedService
-        if (!($selectedServices)) {
-            Write-Host 'No Service Selected...'
-        }
-        else {
-            if ($selectedServices.Count -gt 1) {
-                foreach ($service in $selectedServices) {
-                    $command += "Stop-Service -Name $service -Force; "
-                }
-                Run-Trusted -command $command
-            }
-            else {
-                $command = "Stop-Service -Name $selectedServices -Force"
-                Run-Trusted -command $command
-            }
-        }
+        Stop-SelectedService
     })
 $stopService.Add_MouseEnter({
         $stopService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -312,22 +457,7 @@ $startService.Size = New-Object System.Drawing.Size(90, 30)
 $startService.Location = New-Object System.Drawing.Point(940, 2)
 $startService.ForeColor = 'White'
 $startService.Add_Click({
-        $selectedServices = Get-SelectedService
-        if (!($selectedServices)) {
-            Write-Host 'No Service Selected...'
-        }
-        else {
-            if ($selectedServices.Count -gt 1) {
-                foreach ($service in $selectedServices) {
-                    $command += "Start-Service -Name $service; "
-                }
-                Run-Trusted -command $command
-            }
-            else {
-                $command = "Start-Service -Name $selectedServices"
-                Run-Trusted -command $command
-            }
-        }
+        Start-SelectedService
     })
 $startService.Add_MouseEnter({
         $startService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -382,60 +512,15 @@ $disabledButton.Add_MouseLeave({
 $form.Controls.Add($disabledButton)
 
 $manualButton.Add_Click({
-        $selectedServices = Get-SelectedService
-        if (!($selectedServices)) {
-            Write-Host 'No Service Selected...'
-        }
-        else {
-            if ($selectedServices.Count -gt 1) {
-                foreach ($service in $selectedServices) {
-                    $command += "Set-Service -Name $service -StartupType Manual; "
-                }
-                Run-Trusted -command $command
-            }
-            else {
-                $command = "Set-Service -Name $selectedServices -StartupType Manual"
-                Run-Trusted -command $command
-            }
-        }
+        Set-Manual
     })
 
 $automaticButton.Add_Click({
-        $selectedServices = Get-SelectedService
-        if (!($selectedServices)) {
-            Write-Host 'No Service Selected...'
-        }
-        else {
-            if ($selectedServices.Count -gt 1) {
-                foreach ($service in $selectedServices) {
-                    $command += "Set-Service -Name $service -StartupType Automatic; "
-                }
-                Run-Trusted -command $command
-            }
-            else {
-                $command = "Set-Service -Name $selectedServices -StartupType Automatic"
-                Run-Trusted -command $command
-            }
-        }
+        Set-Automatic
     })
 
 $disabledButton.Add_Click({
-        $selectedServices = Get-SelectedService
-        if (!($selectedServices)) {
-            Write-Host 'No Service Selected...'
-        }
-        else {
-            if ($selectedServices.Count -gt 1) {
-                foreach ($service in $selectedServices) {
-                    $command += "Set-Service -Name $service -StartupType Disabled; "
-                }
-                Run-Trusted -command $command
-            }
-            else {
-                $command = "Set-Service -Name $selectedServices -StartupType Disabled"
-                Run-Trusted -command $command
-            }
-        }
+        Set-Disabled
     })
 
 
