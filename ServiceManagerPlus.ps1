@@ -410,7 +410,7 @@ $form.Controls.Add($label)
 $refreshGrid = New-Object System.Windows.Forms.Button
 $refreshGrid.Text = 'Refresh'
 $refreshGrid.Size = New-Object System.Drawing.Size(90, 30)
-$refreshGrid.Location = New-Object System.Drawing.Point(1150, 2)
+$refreshGrid.Location = New-Object System.Drawing.Point(170, 2)
 $refreshGrid.ForeColor = 'White'
 $refreshGrid.Add_Click({
         #$dataGridView.Rows.Clear()
@@ -432,6 +432,7 @@ $refreshGrid.Add_MouseEnter({
 $refreshGrid.Add_MouseLeave({
         $refreshGrid.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
+$refreshGrid.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
 $form.Controls.Add($refreshGrid)
 
 $stopService = New-Object System.Windows.Forms.Button
