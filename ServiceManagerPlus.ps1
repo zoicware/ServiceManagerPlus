@@ -300,16 +300,52 @@ $form.Controls.Add($dataGridView)
 $contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $lookUpService = New-Object System.Windows.Forms.ToolStripMenuItem
 $lookUpService.Text = 'Look Up Service'
+try {
+    $lookUpService.Image = [System.Drawing.Image]::FromFile('Assets\LookUp.png')
+}
+catch {
+    Write-Host 'Missing Asset (Lookup Icon)' -ForegroundColor Red
+}
 $stop = New-Object System.Windows.Forms.ToolStripMenuItem
 $stop.Text = 'Stop'
+try {
+    $stop.Image = [System.Drawing.Image]::FromFile('Assets\Stop.png')
+}
+catch {
+    Write-Host 'Missing Asset (Stop Icon)' -ForegroundColor Red
+}
 $start = New-Object System.Windows.Forms.ToolStripMenuItem
 $start.Text = 'Start'
+try {
+    $start.Image = [System.Drawing.Image]::FromFile('Assets\Start.png')
+}
+catch {
+    Write-Host 'Missing Asset (Start Icon)' -ForegroundColor Red
+}
 $disable = New-Object System.Windows.Forms.ToolStripMenuItem
 $disable.Text = 'Disable'
+try {
+    $disable.Image = [System.Drawing.Image]::FromFile('Assets\Disable.png')
+}
+catch {
+    Write-Host 'Missing Asset (Disable Icon)' -ForegroundColor Red
+}
 $manual = New-Object System.Windows.Forms.ToolStripMenuItem
 $manual.Text = 'Manual'
+try {
+    $manual.Image = [System.Drawing.Image]::FromFile('Assets\Manual.png')
+}
+catch {
+    Write-Host 'Missing Asset (Manual Icon)' -ForegroundColor Red
+}
 $auto = New-Object System.Windows.Forms.ToolStripMenuItem
 $auto.Text = 'Automatic'
+try {
+    $auto.Image = [System.Drawing.Image]::FromFile('Assets\Auto.png')
+}
+catch {
+    Write-Host 'Missing Asset (Automatic Icon)' -ForegroundColor Red
+}
 $contextMenu.Items.Add($lookUpService) | Out-Null
 $contextMenu.Items.Add($stop) | Out-Null
 $contextMenu.Items.Add($start) | Out-Null
