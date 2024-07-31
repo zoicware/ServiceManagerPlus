@@ -169,6 +169,13 @@ $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Service Manager Plus'
 $form.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
 $form.WindowState = 'Maximized'
+try {
+    $form.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon('Assets\WindowsLogo.ico')
+}
+catch {
+    Write-Host 'Missing Asset (Title Icon)' -ForegroundColor Red
+}
+
 
 $Global:progressBar1 = New-Object System.Windows.Forms.ProgressBar
 $progressBar1.Location = New-Object System.Drawing.Point(500, 400)
