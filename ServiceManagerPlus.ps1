@@ -3,11 +3,32 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     Exit	
 }
 
+function Get-DriverPlus {
+    $drivers = Get-CimInstance -ClassName Win32_SystemDriver
+    $driversList = [System.Collections.ArrayList]::new()
+    $i = 0
+    $totalDrivers = $drivers.Count
+    foreach ($driver in $drivers) {
+        $i++
+        $progressbar1.Value = $(($i / $totalDrivers) * 100) 
+        $driverPlus = [PSCustomObject]@{
+            DisplayName = $driver.DisplayName
+            Name        = $driver.Name
+            Status      = $driver.State
+            StartType   = $driver.StartMode
+            BinaryPath  = $driver.PathName
+        }
+        $driversList.Add($driverPlus) | Out-Null
+    }
+    return $driversList
+}
+
+
 function Get-ServicePlus {
     #Get all Services
     $services = Get-Service -Name * -ErrorAction SilentlyContinue
     $totalServices = $services.Count
-    $svcWMI = Get-WmiObject -Class Win32_Service | Group-Object -Property Name -AsHashTable -AsString
+    $svcWMI = Get-CimInstance -Class Win32_Service | Group-Object -Property Name -AsHashTable -AsString
     #use .net array list since .Add method is much faster than +=
     $servicesPlus = [System.Collections.ArrayList]::new()
     $i = 0
@@ -399,6 +420,39 @@ $disable.Add_Click({
         Set-Disabled
     })
 
+
+function addDriversToGrid {
+    # Retrieve the driver data
+    $driversPlus = Get-DriverPlus
+
+    # Convert the data to a DataTable
+    $Global:dataTable = New-Object System.Data.DataTable
+    $columnNames = $driversPlus[0].PSObject.Properties.Name 
+    foreach ($name in $columnNames) {
+        $dataTable.Columns.Add($name) | Out-Null
+    }
+    foreach ($driver in $driversPlus) {
+        $row = $dataTable.NewRow()
+        $rows = $driver.PSObject.Properties
+        foreach ($r in $rows) {
+            $row[$r.Name] = $driver.$($r.Name) 
+        }
+        $dataTable.Rows.Add($row) | Out-Null
+    }
+
+    # Bind the DataTable to the DataGridView
+    $dataGridView.DataSource = $dataTable
+
+    #set autosize mode for each column
+    $dataGridView.Columns['DisplayName'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+    $dataGridView.Columns['Name'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+    $dataGridView.Columns['Status'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+    $dataGridView.Columns['StartType'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+    $dataGridView.Columns['BinaryPath'].AutoSizeMode = [System.Windows.Forms.DataGridViewAutoSizeColumnsMode]::AllCells
+
+}
+
+
 function addServicesToGrid {
     # Retrieve the service data
     $servicesPlus = Get-ServicePlus
@@ -477,6 +531,33 @@ $refreshGrid.Add_MouseLeave({
     })
 $refreshGrid.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
 $form.Controls.Add($refreshGrid)
+
+$viewDrivers = New-Object System.Windows.Forms.Button
+$viewDrivers.Text = 'View Drivers'
+$viewDrivers.Size = New-Object System.Drawing.Size(90, 30)
+$viewDrivers.Location = New-Object System.Drawing.Point(1050, 2)
+$viewDrivers.ForeColor = 'White'
+$viewDrivers.Add_Click({
+        #$dataGridView.Rows.Clear()
+        $dataGridView.Columns.Clear()
+        $dataGridView.Refresh()
+        $progressBar1.Visible = $true
+        $labelLoading.Visible = $true
+        addDriversToGrid
+        $labelLoading.Visible = $false
+        $progressBar1.Visible = $false
+        $dataGridView.Refresh()
+        $dataGridView.ClearSelection()
+        
+    })
+$viewDrivers.Add_MouseEnter({
+        $viewDrivers.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
+    })
+
+$viewDrivers.Add_MouseLeave({
+        $viewDrivers.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+    })
+$form.Controls.Add($viewDrivers)
 
 $stopService = New-Object System.Windows.Forms.Button
 $stopService.Text = 'Stop Service'
