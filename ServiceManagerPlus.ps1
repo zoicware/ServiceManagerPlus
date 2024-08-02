@@ -3,6 +3,9 @@ if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]:
     Exit	
 }
 
+#set mode service by default
+$Global:Mode = 'service'
+
 function Get-DriverPlus {
     $drivers = Get-CimInstance -ClassName Win32_SystemDriver
     $driversList = [System.Collections.ArrayList]::new()
@@ -88,98 +91,230 @@ function Run-Trusted([String]$command) {
 }
 
 function Stop-SelectedService {
-    $selectedServices = Get-SelectedService
-    if (!($selectedServices)) {
-        Write-Host 'No Service Selected...'
-    }
-    else {
-        if ($selectedServices.Count -gt 1) {
-            foreach ($service in $selectedServices) {
-                $command += "Stop-Service -Name $service -Force; "
-            }
-            Run-Trusted -command $command
+    param(
+        [switch]$service,
+        [switch]$driver
+    )
+    if ($service) {
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
         }
         else {
-            $command = "Stop-Service -Name $selectedServices -Force"
-            Run-Trusted -command $command
+            if ($selectedServices.Count -gt 1) {
+                foreach ($serviceName in $selectedServices) {
+                    $command += "Stop-Service -Name $serviceName -Force; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Stop-Service -Name $selectedServices -Force"
+                Run-Trusted -command $command
+            }
         }
     }
+    else {
+        #stop driver
+        $selectedDrivers = Get-SelectedService
+        if (!$selectedDrivers) {
+            Write-Host 'No Driver Selected...'
+        }
+        else {
+            if ($selectedDrivers -gt 1) {
+                foreach ($driverName in $selectedDrivers) {
+                    $command += "Sc.exe stop $driverName; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Sc.exe stop $selectedDrivers"
+                Run-Trusted -command $command
+            }
+        }
+    }
+    
 }
 
 function Start-SelectedService {
-    $selectedServices = Get-SelectedService
-    if (!($selectedServices)) {
-        Write-Host 'No Service Selected...'
-    }
-    else {
-        if ($selectedServices.Count -gt 1) {
-            foreach ($service in $selectedServices) {
-                $command += "Start-Service -Name $service; "
-            }
-            Run-Trusted -command $command
+    param (
+        [switch]$service,
+        [switch]$driver
+    )
+    if ($service) {
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
         }
         else {
-            $command = "Start-Service -Name $selectedServices"
-            Run-Trusted -command $command
+            if ($selectedServices.Count -gt 1) {
+                foreach ($serviceName in $selectedServices) {
+                    $command += "Start-Service -Name $serviceName; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Start-Service -Name $selectedServices"
+                Run-Trusted -command $command
+            }
         }
     }
+    else {
+        #start driver
+        $selectedDrivers = Get-SelectedService
+        if (!$selectedDrivers) {
+            Write-Host 'No Driver Selected...'
+        }
+        else {
+            if ($selectedDrivers -gt 1) {
+                foreach ($driverName in $selectedDrivers) {
+                    $command += "Sc.exe start $driverName; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Sc.exe start $selectedDrivers"
+                Run-Trusted -command $command
+            }
+        }
+    }
+    
 }
 
 function Set-Manual {
-    $selectedServices = Get-SelectedService
-    if (!($selectedServices)) {
-        Write-Host 'No Service Selected...'
-    }
-    else {
-        if ($selectedServices.Count -gt 1) {
-            foreach ($service in $selectedServices) {
-                $command += "Set-Service -Name $service -StartupType Manual; "
-            }
-            Run-Trusted -command $command
+    param (
+        [switch]$driver,
+        [switch]$service
+    )
+    if ($service) {
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
         }
         else {
-            $command = "Set-Service -Name $selectedServices -StartupType Manual"
-            Run-Trusted -command $command
+            if ($selectedServices.Count -gt 1) {
+                foreach ($serviceName in $selectedServices) {
+                    $command += "Set-Service -Name $serviceName -StartupType Manual; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Manual"
+                Run-Trusted -command $command
+            }
         }
     }
+    else {
+        #set driver
+        $selectedDrivers = Get-SelectedService
+        if (!$selectedDrivers) {
+            Write-Host 'No Driver Selected...'
+        }
+        else {
+            if ($selectedDrivers.Count -gt 1) {
+                foreach ($driverName in $selectedDrivers) {
+                    $command += "Sc.exe config $driverName start= demand; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Sc.exe config $selectedDrivers start= demand"
+                Run-Trusted -command $command
+            }
+        }
+        
+    }
+    
 }
 
 function Set-Automatic {
-    $selectedServices = Get-SelectedService
-    if (!($selectedServices)) {
-        Write-Host 'No Service Selected...'
-    }
-    else {
-        if ($selectedServices.Count -gt 1) {
-            foreach ($service in $selectedServices) {
-                $command += "Set-Service -Name $service -StartupType Automatic; "
-            }
-            Run-Trusted -command $command
+    param(
+        [switch]$driver,
+        [switch]$service
+    )
+    if ($service) {
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
         }
         else {
-            $command = "Set-Service -Name $selectedServices -StartupType Automatic"
-            Run-Trusted -command $command
+            if ($selectedServices.Count -gt 1) {
+                foreach ($serviceName in $selectedServices) {
+                    $command += "Set-Service -Name $serviceName -StartupType Automatic; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Automatic"
+                Run-Trusted -command $command
+            }
         }
     }
+    else {
+        #set driver
+        $selectedDrivers = Get-SelectedService
+        if (!$selectedDrivers) {
+            Write-Host 'No Driver Selected...'
+        }
+        else {
+            if ($selectedDrivers.Count -gt 1) {
+                foreach ($driverName in $selectedDrivers) {
+                    $command += "Sc.exe config $driverName start= auto; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Sc.exe config $selectedDrivers start= auto"
+                Run-Trusted -command $command
+            }
+        }
+        
+    }
+    
 }
 
 function Set-Disabled {
-    $selectedServices = Get-SelectedService
-    if (!($selectedServices)) {
-        Write-Host 'No Service Selected...'
-    }
-    else {
-        if ($selectedServices.Count -gt 1) {
-            foreach ($service in $selectedServices) {
-                $command += "Set-Service -Name $service -StartupType Disabled; "
-            }
-            Run-Trusted -command $command
+    param(
+        [switch]$driver,
+        [switch]$service
+    )
+    if ($service) {
+        $selectedServices = Get-SelectedService
+        if (!($selectedServices)) {
+            Write-Host 'No Service Selected...'
         }
         else {
-            $command = "Set-Service -Name $selectedServices -StartupType Disabled"
-            Run-Trusted -command $command
+            if ($selectedServices.Count -gt 1) {
+                foreach ($serviceName in $selectedServices) {
+                    $command += "Set-Service -Name $serviceName -StartupType Disabled; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Set-Service -Name $selectedServices -StartupType Disabled"
+                Run-Trusted -command $command
+            }
         }
     }
+    else {
+        #set driver
+        $selectedDrivers = Get-SelectedService
+        if (!$selectedDrivers) {
+            Write-Host 'No Driver Selected...'
+        }
+        else {
+            if ($selectedDrivers.Count -gt 1) {
+                foreach ($driverName in $selectedDrivers) {
+                    $command += "Sc.exe config $driverName start= disabled; "
+                }
+                Run-Trusted -command $command
+            }
+            else {
+                $command = "Sc.exe config $selectedDrivers start= disabled"
+                Run-Trusted -command $command
+            }
+        }
+    }
+    
 }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -401,23 +536,23 @@ $lookUpService.Add_Click({
     })
 
 $stop.Add_Click({
-        Stop-SelectedService
+        Invoke-Expression -Command "Stop-SelectedService -$Mode"
     })
 
 $start.Add_Click({
-        Start-SelectedService
+        Invoke-Expression -Command "Start-SelectedService -$Mode"
     })
 
 $manual.Add_Click({
-        Set-Manual
+        Invoke-Expression -Command "Set-Manual -$Mode"
     })
 
 $auto.Add_Click({
-        Set-Automatic
+        Invoke-Expression -Command "Set-Automatic -$Mode"
     })
 
 $disable.Add_Click({
-        Set-Disabled
+        Invoke-Expression -Command "Set-Disabled -$Mode"
     })
 
 
@@ -538,6 +673,7 @@ $viewDrivers.Size = New-Object System.Drawing.Size(90, 30)
 $viewDrivers.Location = New-Object System.Drawing.Point(1050, 2)
 $viewDrivers.ForeColor = 'White'
 $viewDrivers.Add_Click({
+        $Global:Mode = 'driver'
         #$dataGridView.Rows.Clear()
         $dataGridView.Columns.Clear()
         $dataGridView.Refresh()
@@ -637,15 +773,15 @@ $disabledButton.Add_MouseLeave({
 $form.Controls.Add($disabledButton)
 
 $manualButton.Add_Click({
-        Set-Manual
+        Invoke-Expression -Command "Set-Manual -$Mode"
     })
 
 $automaticButton.Add_Click({
-        Set-Automatic
+        Invoke-Expression -Command "Set-Automatic -$Mode"
     })
 
 $disabledButton.Add_Click({
-        Set-Disabled
+        Invoke-Expression -Command "Set-Disabled -$Mode"
     })
 
 
