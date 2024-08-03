@@ -316,6 +316,49 @@ function Set-Disabled {
     }
     
 }
+
+
+function Set-System {
+    #set driver
+    $selectedDrivers = Get-SelectedService
+    if (!$selectedDrivers) {
+        Write-Host 'No Driver Selected...'
+    }
+    else {
+        if ($selectedDrivers.Count -gt 1) {
+            foreach ($driverName in $selectedDrivers) {
+                $command += "Sc.exe config $driverName start= system; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Sc.exe config $selectedDrivers start= system"
+            Run-Trusted -command $command
+        }
+    }
+}
+
+function Set-Boot {
+    #set driver
+    $selectedDrivers = Get-SelectedService
+    if (!$selectedDrivers) {
+        Write-Host 'No Driver Selected...'
+    }
+    else {
+        if ($selectedDrivers.Count -gt 1) {
+            foreach ($driverName in $selectedDrivers) {
+                $command += "Sc.exe config $driverName start= boot; "
+            }
+            Run-Trusted -command $command
+        }
+        else {
+            $command = "Sc.exe config $selectedDrivers start= boot"
+            Run-Trusted -command $command
+        }
+    }
+}
+
+
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
@@ -399,8 +442,8 @@ $form.Controls.Add($openReg)
 
 # Create the TextBox for search
 $searchBox = New-Object System.Windows.Forms.TextBox
-$searchBox.Location = New-Object System.Drawing.Point(5, 5)
-$searchBox.Size = New-Object System.Drawing.Size(200, 20)
+$searchBox.Location = New-Object System.Drawing.Point(60, 5)
+$searchBox.Size = New-Object System.Drawing.Size(150, 20)
 $form.Controls.Add($searchBox)
 
 # Add a TextChanged event to the TextBox
@@ -410,7 +453,7 @@ $searchBox.add_TextChanged({
 
 # Create the PictureBox
 $pictureBox = New-Object System.Windows.Forms.PictureBox
-$pictureBox.Location = New-Object System.Drawing.Point(215, 5) 
+$pictureBox.Location = New-Object System.Drawing.Point(220, 5) 
 $pictureBox.Size = New-Object System.Drawing.Size(30, 20) 
 $pictureBox.SizeMode = [System.Windows.Forms.PictureBoxSizeMode]::Zoom
 $imagePath = 'Assets\Search.png'
@@ -502,12 +545,32 @@ try {
 catch {
     Write-Host 'Missing Asset (Automatic Icon)' -ForegroundColor Red
 }
+$Global:system = New-Object System.Windows.Forms.ToolStripMenuItem
+$system.Text = 'System'
+$system.Visible = $false
+try {
+    $system.Image = [System.Drawing.Image]::FromFile('Assets\System.png')
+}
+catch {
+    Write-Host 'Missing Asset (System Icon)' -ForegroundColor Red
+}
+$Global:boot = New-Object System.Windows.Forms.ToolStripMenuItem
+$boot.Text = 'Boot'
+$boot.Visible = $false
+try {
+    $boot.Image = [System.Drawing.Image]::FromFile('Assets\Boot.png')
+}
+catch {
+    Write-Host 'Missing Asset (Boot Icon)' -ForegroundColor Red
+}
 $contextMenu.Items.Add($lookUpService) | Out-Null
 $contextMenu.Items.Add($stop) | Out-Null
 $contextMenu.Items.Add($start) | Out-Null
 $contextMenu.Items.Add($disable) | Out-Null
 $contextMenu.Items.Add($manual) | Out-Null
 $contextMenu.Items.Add($auto) | Out-Null
+$contextMenu.Items.Add($boot) | Out-Null
+$contextMenu.Items.Add($system) | Out-Null
 $dataGridView.ContextMenuStrip = $contextMenu
 
 # Handle the MouseDown event to show the context menu only when a row is selected
@@ -555,7 +618,13 @@ $disable.Add_Click({
         Invoke-Expression -Command "Set-Disabled -$Mode"
     })
 
+$system.Add_Click({
+        Set-System
+    })
 
+$boot.Add_Click({
+        Set-Boot
+    })
 function addDriversToGrid {
     # Retrieve the driver data
     $driversPlus = Get-DriverPlus
@@ -634,20 +703,22 @@ addServicesToGrid
 $label = New-Object System.Windows.Forms.Label
 $label.Text = 'Set Service:'
 $label.ForeColor = 'White'
-$label.Location = New-Object System.Drawing.Point(440, 5)
+$label.Location = New-Object System.Drawing.Point(470, 5)
 $label.AutoSize = $true
 $label.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 $form.Controls.Add($label)
 
 $refreshGrid = New-Object System.Windows.Forms.Button
-$refreshGrid.Text = 'Refresh'
+$refreshGrid.Text = 'View Services'
 $refreshGrid.Size = New-Object System.Drawing.Size(90, 30)
-$refreshGrid.Location = New-Object System.Drawing.Point(170, 2)
+$refreshGrid.Location = New-Object System.Drawing.Point(50, 2)
 $refreshGrid.ForeColor = 'White'
 $refreshGrid.Add_Click({
         #$dataGridView.Rows.Clear()
         $dataGridView.Columns.Clear()
         $dataGridView.Refresh()
+        $boot.Visable = $false
+        $system.Visable = $false
         $progressBar1.Visible = $true
         $labelLoading.Visible = $true
         addServicesToGrid
@@ -670,10 +741,12 @@ $form.Controls.Add($refreshGrid)
 $viewDrivers = New-Object System.Windows.Forms.Button
 $viewDrivers.Text = 'View Drivers'
 $viewDrivers.Size = New-Object System.Drawing.Size(90, 30)
-$viewDrivers.Location = New-Object System.Drawing.Point(1050, 2)
+$viewDrivers.Location = New-Object System.Drawing.Point(150, 2)
 $viewDrivers.ForeColor = 'White'
 $viewDrivers.Add_Click({
         $Global:Mode = 'driver'
+        $system.Visible = $true
+        $boot.Visable = $true
         #$dataGridView.Rows.Clear()
         $dataGridView.Columns.Clear()
         $dataGridView.Refresh()
@@ -693,12 +766,104 @@ $viewDrivers.Add_MouseEnter({
 $viewDrivers.Add_MouseLeave({
         $viewDrivers.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
+$viewDrivers.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
 $form.Controls.Add($viewDrivers)
+
+$exportMenu = New-Object System.Windows.Forms.Button
+$exportMenu.Size = New-Object System.Drawing.Size(40, 30)
+$exportMenu.Location = New-Object System.Drawing.Point(3, 2)
+$exportMenu.ForeColor = 'White'
+$exportMenu.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$exportMenu.FlatAppearance.BorderSize = 0
+#$exportMenu.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(62, 62, 64)
+#$exportMenu.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(27, 27, 28)
+try {
+    $image = [System.Drawing.Image]::FromFile('Assets\Menu.png')
+
+    $resizedImage = New-Object System.Drawing.Bitmap $image, 25, 19
+
+    # Set the button image
+    $exportMenu.Image = $resizedImage
+    $exportMenu.ImageAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+}
+catch {
+    Write-Host 'Missing Asset (Menu Icon)' -ForegroundColor Red
+}
+
+$exportMenu.Add_Click({
+        $exportContextMenu.Show($exportMenu, 0, $exportMenu.Height)
+    })
+$form.Controls.Add($exportMenu)
+
+$exportContextMenu = New-Object System.Windows.Forms.ContextMenuStrip
+$form.ContextMenuStrip = $exportContextMenu
+# Add menu items to the context menu strip
+$exportServices = New-Object System.Windows.Forms.ToolStripMenuItem
+$exportServices.Text = 'Export Services'
+$exportContextMenu.Items.Add($exportServices) | Out-Null
+$exportServices.Add_Click({
+        $folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
+        $folderBrowser.Description = 'Select a Destination'
+        $folderBrowser.RootFolder = [System.Environment+SpecialFolder]::Desktop
+        $folderBrowser.ShowNewFolderButton = $true
+
+        # Show the dialog and get the selected folder
+        $result = $folderBrowser.ShowDialog()
+
+        if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+            $selectedFolder = $folderBrowser.SelectedPath
+        }
+        #build reg file
+        $key = 'HKLM\SYSTEM\ControlSet001\Services'
+        $header = 'Windows Registry Editor Version 5.00'
+        New-Item -Path $selectedFolder -Name 'ServicesBackup.reg' -Force | Out-Null
+        Add-Content -Path "$selectedFolder\ServicesBackup.reg" -Value $header -Force
+        $regContent = ''
+        foreach ($row in $dataGridView.Rows) {
+            $name = $row.Cells[1].Value
+            if ($null -ne $name) {
+                $startValue = Get-ItemPropertyValue -Path "registry::$key\$name" -Name 'Start'
+                $regContent += "[$key\$name] `n" + "`"Start`"=dword:0000000$($startValue)`n `n"
+            }  
+        }
+        Add-Content -Path "$selectedFolder\ServicesBackup.reg" -Value $regContent -Force
+    })
+
+$exportDrivers = New-Object System.Windows.Forms.ToolStripMenuItem
+$exportDrivers.Text = 'Export Drivers'
+$exportContextMenu.Items.Add($exportDrivers) | Out-Null
+$exportDrivers.Add_Click({
+        $folderBrowser = New-Object System.Windows.Forms.FolderBrowserDialog
+        $folderBrowser.Description = 'Select a Destination'
+        $folderBrowser.RootFolder = [System.Environment+SpecialFolder]::Desktop
+        $folderBrowser.ShowNewFolderButton = $true
+
+        # Show the dialog and get the selected folder
+        $result = $folderBrowser.ShowDialog()
+
+        if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+            $selectedFolder = $folderBrowser.SelectedPath
+        }
+        #build reg file
+        $key = 'HKLM\SYSTEM\ControlSet001\Services'
+        $header = 'Windows Registry Editor Version 5.00'
+        New-Item -Path $selectedFolder -Name 'DriversBackup.reg' -Force | Out-Null
+        Add-Content -Path "$selectedFolder\DriversBackup.reg" -Value $header -Force
+        $regContent = ''
+        foreach ($row in $dataGridView.Rows) {
+            $name = $row.Cells[1].Value
+            if ($null -ne $name) {
+                $startValue = Get-ItemPropertyValue -Path "registry::$key\$name" -Name 'Start'
+                $regContent += "[$key\$name] `n" + "`"Start`"=dword:0000000$($startValue)`n `n"
+            }  
+        }
+        Add-Content -Path "$selectedFolder\DriversBackup.reg" -Value $regContent -Force
+    })
 
 $stopService = New-Object System.Windows.Forms.Button
 $stopService.Text = 'Stop Service'
 $stopService.Size = New-Object System.Drawing.Size(90, 30)
-$stopService.Location = New-Object System.Drawing.Point(850, 2)
+$stopService.Location = New-Object System.Drawing.Point(900, 2)
 $stopService.ForeColor = 'White'
 $stopService.Add_Click({
         Stop-SelectedService
@@ -715,7 +880,7 @@ $form.Controls.Add($stopService)
 $startService = New-Object System.Windows.Forms.Button
 $startService.Text = 'Start Service'
 $startService.Size = New-Object System.Drawing.Size(90, 30)
-$startService.Location = New-Object System.Drawing.Point(940, 2)
+$startService.Location = New-Object System.Drawing.Point(990, 2)
 $startService.ForeColor = 'White'
 $startService.Add_Click({
         Start-SelectedService
@@ -733,7 +898,7 @@ $form.Controls.Add($startService)
 $manualButton = New-Object System.Windows.Forms.Button
 $manualButton.Text = 'Manual'
 $manualButton.Size = New-Object System.Drawing.Size(90, 30)
-$manualButton.Location = New-Object System.Drawing.Point(520, 2)
+$manualButton.Location = New-Object System.Drawing.Point(550, 2)
 $manualButton.ForeColor = 'White'
 $manualButton.Add_MouseEnter({
         $manualButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -747,7 +912,7 @@ $form.Controls.Add($manualButton)
 $automaticButton = New-Object System.Windows.Forms.Button
 $automaticButton.Text = 'Automatic'
 $automaticButton.Size = New-Object System.Drawing.Size(90, 30)
-$automaticButton.Location = New-Object System.Drawing.Point(610, 2)
+$automaticButton.Location = New-Object System.Drawing.Point(650, 2)
 $automaticButton.ForeColor = 'White'
 $automaticButton.Add_MouseEnter({
         $automaticButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -761,7 +926,7 @@ $form.Controls.Add($automaticButton)
 $disabledButton = New-Object System.Windows.Forms.Button
 $disabledButton.Text = 'Disabled'
 $disabledButton.Size = New-Object System.Drawing.Size(90, 30)
-$disabledButton.Location = New-Object System.Drawing.Point(700, 2)
+$disabledButton.Location = New-Object System.Drawing.Point(750, 2)
 $disabledButton.ForeColor = 'White'
 $disabledButton.Add_MouseEnter({
         $disabledButton.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
