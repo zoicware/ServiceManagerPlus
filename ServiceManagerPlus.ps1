@@ -439,6 +439,9 @@ $openReg.Add_Click({
         }
     })
 $form.Controls.Add($openReg)
+$openregtooltip = New-Object System.Windows.Forms.ToolTip
+$openregtooltip.Active | Out-Null
+$openregtooltip.SetToolTip($openReg, 'Open Service or Driver in Registry Editor')
 
 # Create the TextBox for search
 $searchBox = New-Object System.Windows.Forms.TextBox
@@ -737,6 +740,9 @@ $refreshGrid.Add_MouseLeave({
     })
 $refreshGrid.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
 $form.Controls.Add($refreshGrid)
+$viewServicestooltip = New-Object System.Windows.Forms.ToolTip
+$viewServicestooltip.Active | Out-Null
+$viewServicestooltip.SetToolTip($refreshGrid, 'Refreshes Service List')
 
 $viewDrivers = New-Object System.Windows.Forms.Button
 $viewDrivers.Text = 'View Drivers'
@@ -768,6 +774,10 @@ $viewDrivers.Add_MouseLeave({
     })
 $viewDrivers.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Right
 $form.Controls.Add($viewDrivers)
+$viewdriverstooltip = New-Object System.Windows.Forms.ToolTip
+$viewdriverstooltip.Active | Out-Null
+$viewdriverstooltip.SetToolTip($viewDrivers, 'Refreshes Driver List')
+
 
 $exportMenu = New-Object System.Windows.Forms.Button
 $exportMenu.Size = New-Object System.Drawing.Size(40, 30)
@@ -794,6 +804,10 @@ $exportMenu.Add_Click({
         $exportContextMenu.Show($exportMenu, 0, $exportMenu.Height)
     })
 $form.Controls.Add($exportMenu)
+$exportMenutooltip = New-Object System.Windows.Forms.ToolTip
+$exportMenutooltip.Active | Out-Null
+$exportMenutooltip.SetToolTip($exportMenu, 'Export Services or Drivers in REG Format')
+
 
 $exportContextMenu = New-Object System.Windows.Forms.ContextMenuStrip
 $form.ContextMenuStrip = $exportContextMenu
@@ -866,7 +880,7 @@ $stopService.Size = New-Object System.Drawing.Size(90, 30)
 $stopService.Location = New-Object System.Drawing.Point(860, 2)
 $stopService.ForeColor = 'White'
 $stopService.Add_Click({
-        Stop-SelectedService
+        Invoke-Expression -Command "Stop-SelectedService -$Mode"
     })
 $stopService.Add_MouseEnter({
         $stopService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -876,6 +890,9 @@ $stopService.Add_MouseLeave({
         $stopService.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
 $form.Controls.Add($stopService)
+$stopServicetooltip = New-Object System.Windows.Forms.ToolTip
+$stopServicetooltip.Active | Out-Null
+$stopServicetooltip.SetToolTip($stopService, 'Stop Selected Service(s) or Driver(s)')
 
 $startService = New-Object System.Windows.Forms.Button
 $startService.Text = 'Start Service'
@@ -883,7 +900,7 @@ $startService.Size = New-Object System.Drawing.Size(90, 30)
 $startService.Location = New-Object System.Drawing.Point(950, 2)
 $startService.ForeColor = 'White'
 $startService.Add_Click({
-        Start-SelectedService
+        Invoke-Expression -Command "Start-SelectedService -$Mode"
     })
 $startService.Add_MouseEnter({
         $startService.BackColor = [System.Drawing.Color]::FromArgb(64, 64, 64)
@@ -893,6 +910,10 @@ $startService.Add_MouseLeave({
         $startService.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
 $form.Controls.Add($startService)
+$startServicetooltip = New-Object System.Windows.Forms.ToolTip
+$startServicetooltip.Active | Out-Null
+$startServicetooltip.SetToolTip($startService, 'Start Selected Service(s) or Driver(s)')
+
 
 # Create the buttons
 $manualButton = New-Object System.Windows.Forms.Button
@@ -908,6 +929,9 @@ $manualButton.Add_MouseLeave({
         $manualButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
 $form.Controls.Add($manualButton)
+$manualButtontooltip = New-Object System.Windows.Forms.ToolTip
+$manualButtontooltip.Active | Out-Null
+$manualButtontooltip.SetToolTip($manualButton, 'Set Selected Service(s) or Driver(s) to Manual')
 
 $automaticButton = New-Object System.Windows.Forms.Button
 $automaticButton.Text = 'Automatic'
@@ -922,6 +946,9 @@ $automaticButton.Add_MouseLeave({
         $automaticButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
     })
 $form.Controls.Add($automaticButton)
+$automaticButtontooltip = New-Object System.Windows.Forms.ToolTip
+$automaticButtontooltip.Active | Out-Null
+$automaticButtontooltip.SetToolTip($automaticButton, 'Set Selected Service(s) or Driver(s) to Automatic')
 
 $disabledButton = New-Object System.Windows.Forms.Button
 $disabledButton.Text = 'Disabled'
@@ -934,8 +961,13 @@ $disabledButton.Add_MouseEnter({
 
 $disabledButton.Add_MouseLeave({
         $disabledButton.BackColor = [System.Drawing.Color]::FromArgb(43, 43, 42)
+        $disabledButtontooltip.Hide($disabledButton)
     })
 $form.Controls.Add($disabledButton)
+$disabledButtontooltip = New-Object System.Windows.Forms.ToolTip
+$disabledButtontooltip.Active | Out-Null
+$disabledButtontooltip.SetToolTip($disabledButton, 'Set Selected Service(s) or Driver(s) to Disabled')
+
 
 $manualButton.Add_Click({
         Invoke-Expression -Command "Set-Manual -$Mode"
