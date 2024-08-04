@@ -717,8 +717,8 @@ $refreshGrid.Add_Click({
         #$dataGridView.Rows.Clear()
         $dataGridView.Columns.Clear()
         $dataGridView.Refresh()
-        $boot.Visable = $false
-        $system.Visable = $false
+        $boot.Visible = $false
+        $system.Visible = $false
         $progressBar1.Visible = $true
         $labelLoading.Visible = $true
         addServicesToGrid
@@ -746,7 +746,7 @@ $viewDrivers.ForeColor = 'White'
 $viewDrivers.Add_Click({
         $Global:Mode = 'driver'
         $system.Visible = $true
-        $boot.Visable = $true
+        $boot.Visible = $true
         #$dataGridView.Rows.Clear()
         $dataGridView.Columns.Clear()
         $dataGridView.Refresh()
