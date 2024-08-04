@@ -21,3 +21,4 @@ Service Manager plus is a PowerShell desktop app with a WinForms GUI. With lots 
 > **TIP By Searching some text the search results will be exported instead of the whole list**
 
 
+![image](https://github.com/user-attachments/assets/276d2aaf-5813-4d28-8bd6-eb7672c62768)
