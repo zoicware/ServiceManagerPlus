@@ -863,7 +863,7 @@ $exportDrivers.Add_Click({
 $stopService = New-Object System.Windows.Forms.Button
 $stopService.Text = 'Stop Service'
 $stopService.Size = New-Object System.Drawing.Size(90, 30)
-$stopService.Location = New-Object System.Drawing.Point(900, 2)
+$stopService.Location = New-Object System.Drawing.Point(860, 2)
 $stopService.ForeColor = 'White'
 $stopService.Add_Click({
         Stop-SelectedService
@@ -880,7 +880,7 @@ $form.Controls.Add($stopService)
 $startService = New-Object System.Windows.Forms.Button
 $startService.Text = 'Start Service'
 $startService.Size = New-Object System.Drawing.Size(90, 30)
-$startService.Location = New-Object System.Drawing.Point(990, 2)
+$startService.Location = New-Object System.Drawing.Point(950, 2)
 $startService.ForeColor = 'White'
 $startService.Add_Click({
         Start-SelectedService
